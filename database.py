@@ -149,3 +149,27 @@ def get_latest_candle() -> sqlite3.Row | None:
         ).fetchone()
 
     return row
+
+
+def get_latest_candles(limit: int = 50) -> list[sqlite3.Row]:
+    """
+    Henter de seneste candles i kronologisk rækkefølge.
+
+    Den ældste candle kommer først.
+    Den nyeste candle kommer sidst.
+    """
+    if limit <= 0:
+        raise ValueError("Limit skal være større end 0.")
+
+    with get_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT *
+            FROM candles
+            ORDER BY open_time DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+
+    return list(reversed(rows))
