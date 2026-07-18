@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>AI Trading Experiment</title>
+
+    <link
+        rel="stylesheet"
+        href="/style.css"
+    >
+</head>
+
+<body>
+    <main class="page">
+        <header class="header">
+            <div>
+                <p class="eyebrow">
+                    Live paper trading
+                </p>
+
+                <h1>AI Trading Experiment</h1>
+
+                <p class="subtitle">
+                    A model continuously trades BTC/USDT
+                    using virtual money.
+                </p>
+            </div>
+
+            <div class="live-status">
+                <span class="live-dot"></span>
+                LIVE
+            </div>
+        </header>
+
+        <section
+            id="error-message"
+            class="error-message hidden"
+        ></section>
+
+        <section class="market-card">
+            <div>
+                <p class="label">
+                    BTC/USDT
+                </p>
+
+                <p
+                    id="current-price"
+                    class="market-price"
+                >
+                    Loading...
+                </p>
+            </div>
+
+            <div class="market-time">
+                <p class="label">
+                    Latest candle
+                </p>
+
+                <p id="latest-candle-time">
+                    Loading...
+                </p>
+            </div>
+        </section>
+
+        <section class="stats-grid">
+            <article class="stat-card">
+                <p class="label">
+                    Account balance
+                </p>
+
+                <p
+                    id="account-balance"
+                    class="stat-value"
+                >
+                    —
+                </p>
+            </article>
+
+            <article class="stat-card">
+                <p class="label">
+                    Total P/L
+                </p>
+
+                <p
+                    id="total-profit"
+                    class="stat-value"
+                >
+                    —
+                </p>
+            </article>
+
+            <article class="stat-card">
+                <p class="label">
+                    Total return
+                </p>
+
+                <p
+                    id="total-return"
+                    class="stat-value"
+                >
+                    —
+                </p>
+            </article>
+
+            <article class="stat-card">
+                <p class="label">
+                    Win rate
+                </p>
+
+                <p
+                    id="win-rate"
+                    class="stat-value"
+                >
+                    —
+                </p>
+            </article>
+
+            <article class="stat-card">
+                <p class="label">
+                    Closed trades
+                </p>
+
+                <p
+                    id="total-trades"
+                    class="stat-value"
+                >
+                    —
+                </p>
+            </article>
+
+            <article class="stat-card">
+                <p class="label">
+                    Profit factor
+                </p>
+
+                <p
+                    id="profit-factor"
+                    class="stat-value"
+                >
+                    —
+                </p>
+            </article>
+        </section>
+
+        <section class="trade-section">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">
+                        Current position
+                    </p>
+
+                    <h2>Open trade</h2>
+                </div>
+
+                <p
+                    id="trade-status"
+                    class="trade-status"
+                >
+                    Loading...
+                </p>
+            </div>
+
+            <div
+                id="open-trade"
+                class="trade-card"
+            >
+                <div class="trade-direction-wrapper">
+                    <p class="label">
+                        Direction
+                    </p>
+
+                    <p
+                        id="trade-direction"
+                        class="trade-direction"
+                    >
+                        —
+                    </p>
+                </div>
+
+                <div>
+                    <p class="label">
+                        Entry price
+                    </p>
+
+                    <p
+                        id="entry-price"
+                        class="trade-value"
+                    >
+                        —
+                    </p>
+                </div>
+
+                <div>
+                    <p class="label">
+                        Position size
+                    </p>
+
+                    <p
+                        id="position-size"
+                        class="trade-value"
+                    >
+                        —
+                    </p>
+                </div>
+
+                <div>
+                    <p class="label">
+                        Candles remaining
+                    </p>
+
+                    <p
+                        id="candles-remaining"
+                        class="trade-value"
+                    >
+                        —
+                    </p>
+                </div>
+
+                <div>
+                    <p class="label">
+                        Holding period
+                    </p>
+
+                    <p
+                        id="holding-candles"
+                        class="trade-value"
+                    >
+                        —
+                    </p>
+                </div>
+
+                <div>
+                    <p class="label">
+                        Model
+                    </p>
+
+                    <p
+                        id="model-version"
+                        class="trade-value"
+                    >
+                        —
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>
+                This is a paper-trading experiment.
+                No real money is being traded.
+            </p>
+
+            <p id="last-updated">
+                Waiting for data...
+            </p>
+        </footer>
+    </main>
+
+    <script src="/app.js"></script>
+</body>
+</html>

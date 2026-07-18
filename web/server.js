@@ -14,6 +14,10 @@ let database;
 
 app.use(express.json());
 
+app.use(express.static(
+    path.join(__dirname, "public")
+));
+
 function parseNumber(value) {
     if (value === null || value === undefined) {
         return null;
@@ -354,21 +358,6 @@ app.get("/api/status", async (request, response) => {
     }
 });
 
-app.get("/", (request, response) => {
-    response.send(`
-        <h1>AI Trading Experiment API</h1>
-        <p>API'et kører.</p>
-
-        <ul>
-            <li><a href="/api/status">/api/status</a></li>
-            <li><a href="/api/account">/api/account</a></li>
-            <li><a href="/api/trade/open">/api/trade/open</a></li>
-            <li><a href="/api/trades">/api/trades</a></li>
-            <li><a href="/api/equity">/api/equity</a></li>
-            <li><a href="/api/statistics">/api/statistics</a></li>
-        </ul>
-    `);
-});
 
 async function startServer() {
     try {
