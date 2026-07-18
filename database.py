@@ -79,6 +79,53 @@ def save_candle(candle: dict[str, Any]) -> bool:
         return cursor.rowcount == 1
 
 
+def save_candles(candles: list[dict[str, Any]]) -> int:
+    """
+    Gemmer flere candles i én databaseoperation.
+
+    Returnerer antallet af nye candles, der blev gemt.
+    Eksisterende candles ignoreres.
+    """
+    rows = [
+        (
+            candle["symbol"],
+            candle["interval"],
+            candle["open_time"].isoformat(),
+            candle["close_time"].isoformat(),
+            str(candle["open"]),
+            str(candle["high"]),
+            str(candle["low"]),
+            str(candle["close"]),
+            str(candle["volume"]),
+            candle["number_of_trades"],
+        )
+        for candle in candles
+    ]
+
+    with get_connection() as connection:
+        before_count = connection.total_changes
+
+        connection.executemany(
+            """
+            INSERT OR IGNORE INTO candles (
+                symbol,
+                interval,
+                open_time,
+                close_time,
+                open_price,
+                high_price,
+                low_price,
+                close_price,
+                volume,
+                number_of_trades
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            rows,
+        )
+
+        return connection.total_changes - before_count
+
 def get_candle_count() -> int:
     """Returnerer antal candles i databasen."""
     with get_connection() as connection:
