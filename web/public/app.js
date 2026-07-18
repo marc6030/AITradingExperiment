@@ -68,6 +68,15 @@ const elements = {
     lastUpdated: document.querySelector(
         "#last-updated"
     ),
+
+    historyStatus: document.querySelector(
+        "#history-status"
+    ),
+
+    tradeHistoryBody: document.querySelector(
+        "#trade-history-body"
+    ),
+
 };
 
 function formatCurrency(value) {
@@ -239,6 +248,128 @@ function renderTrade(trade) {
         trade.modelVersion;
 }
 
+
+function createTradeRow(trade) {
+    const row = document.createElement("tr");
+
+    const returnClass =
+        trade.netReturnPercent > 0
+            ? "positive"
+            : trade.netReturnPercent < 0
+                ? "negative"
+                : "neutral";
+
+    const pnlClass =
+        trade.pnlAmount > 0
+            ? "positive"
+            : trade.pnlAmount < 0
+                ? "negative"
+                : "neutral";
+
+    row.innerHTML = `
+        <td>#${trade.id}</td>
+
+        <td>
+            <span class="direction-badge ${trade.direction.toLowerCase()}">
+                ${trade.direction}
+            </span>
+        </td>
+
+        <td>${formatPrice(trade.entryPrice)}</td>
+
+        <td>${formatPrice(trade.exitPrice)}</td>
+
+        <td>${trade.holdingCandles} min</td>
+
+        <td class="${returnClass}">
+            ${formatPercent(trade.netReturnPercent)}
+        </td>
+
+        <td class="${pnlClass}">
+            ${formatSignedCurrency(trade.pnlAmount)}
+        </td>
+    `;
+
+    return row;
+}
+
+function formatSignedCurrency(value) {
+    if (value === null || value === undefined) {
+        return "—";
+    }
+
+    const sign = value > 0 ? "+" : "";
+
+    return `${sign}${formatCurrency(value)}`;
+}
+
+function renderTradeHistory(trades) {
+    elements.tradeHistoryBody.innerHTML = "";
+
+    const closedTrades = trades.filter(
+        (trade) => trade.status === "CLOSED"
+    );
+
+    if (closedTrades.length === 0) {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td colspan="7" class="empty-table">
+                No closed trades yet.
+            </td>
+        `;
+
+        elements.tradeHistoryBody.appendChild(row);
+        elements.historyStatus.textContent =
+            "0 closed trades";
+
+        return;
+    }
+
+    for (const trade of closedTrades) {
+        const row = createTradeRow(trade);
+        elements.tradeHistoryBody.appendChild(row);
+    }
+
+    elements.historyStatus.textContent =
+        `${closedTrades.length} shown`;
+}
+
+async function loadTradeHistory() {
+    try {
+        const response = await fetch(
+            "/api/trades?limit=20",
+            {
+                cache: "no-store",
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `Trade API returned ${response.status}`
+            );
+        }
+
+        const data = await response.json();
+
+        renderTradeHistory(data.trades);
+    } catch (error) {
+        console.error(error);
+
+        elements.historyStatus.textContent =
+            "Could not load trades";
+
+        elements.tradeHistoryBody.innerHTML = `
+            <tr>
+                <td colspan="7" class="empty-table">
+                    Could not load trade history.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+
 async function loadStatus() {
     try {
         const response = await fetch(
@@ -277,9 +408,16 @@ async function loadStatus() {
     }
 }
 
-loadStatus();
+async function refreshPage() {
+    await Promise.all([
+        loadStatus(),
+        loadTradeHistory(),
+    ]);
+}
+
+refreshPage();
 
 setInterval(
-    loadStatus,
+    refreshPage,
     REFRESH_INTERVAL_MS
 );

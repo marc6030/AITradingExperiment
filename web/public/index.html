@@ -250,6 +250,41 @@
             </div>
         </section>
 
+        <section class="history-section">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Trade history</p>
+                    <h2>Latest trades</h2>
+                </div>
+
+                <p id="history-status" class="trade-status">
+                    Loading...
+                </p>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="trade-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Direction</th>
+                            <th>Entry</th>
+                            <th>Exit</th>
+                            <th>Duration</th>
+                            <th>Return</th>
+                            <th>P/L</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="trade-history-body">
+                        <tr>
+                            <td colspan="7">Loading trades...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
         <footer class="footer">
             <p>
                 This is a paper-trading experiment.
