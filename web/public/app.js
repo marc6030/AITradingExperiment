@@ -77,6 +77,38 @@ const elements = {
         "#trade-history-body"
     ),
 
+    equityStatus: document.querySelector(
+        "#equity-status"
+    ),
+
+    equityBalance: document.querySelector(
+        "#equity-balance"
+    ),
+
+    equityChange: document.querySelector(
+        "#equity-change"
+    ),
+
+    equityLine: document.querySelector(
+        "#equity-line"
+    ),
+
+    equityZeroLine: document.querySelector(
+        "#equity-zero-line"
+    ),
+
+    equityEmptyMessage: document.querySelector(
+        "#equity-empty-message"
+    ),
+
+    chartStartLabel: document.querySelector(
+        "#chart-start-label"
+    ),
+
+    chartEndLabel: document.querySelector(
+        "#chart-end-label"
+    ),
+
 };
 
 function formatCurrency(value) {
@@ -408,10 +440,211 @@ async function loadStatus() {
     }
 }
 
+function calculateChartPoints(points) {
+    const chartWidth = 1000;
+    const chartHeight = 320;
+    const padding = 24;
+
+    const balances = points.map(
+        (point) => point.balance
+    );
+
+    let minimumBalance = Math.min(...balances);
+    let maximumBalance = Math.max(...balances);
+
+    if (minimumBalance === maximumBalance) {
+        minimumBalance -= 1;
+        maximumBalance += 1;
+    }
+
+    const balanceRange =
+        maximumBalance - minimumBalance;
+
+    return points.map((point, index) => {
+        const x =
+            points.length === 1
+                ? chartWidth / 2
+                : (
+                    index /
+                    (points.length - 1)
+                ) * chartWidth;
+
+        const normalizedBalance =
+            (
+                point.balance - minimumBalance
+            ) / balanceRange;
+
+        const y =
+            chartHeight -
+            padding -
+            normalizedBalance *
+                (chartHeight - padding * 2);
+
+        return {
+            x,
+            y,
+        };
+    });
+}
+
+
+function calculateReferenceLine(points) {
+    const chartHeight = 320;
+    const padding = 24;
+
+    const balances = points.map(
+        (point) => point.balance
+    );
+
+    let minimumBalance = Math.min(...balances);
+    let maximumBalance = Math.max(...balances);
+
+    if (minimumBalance === maximumBalance) {
+        minimumBalance -= 1;
+        maximumBalance += 1;
+    }
+
+    const initialBalance = points[0].balance;
+    const balanceRange =
+        maximumBalance - minimumBalance;
+
+    const normalizedInitialBalance =
+        (
+            initialBalance - minimumBalance
+        ) / balanceRange;
+
+    return (
+        chartHeight -
+        padding -
+        normalizedInitialBalance *
+            (chartHeight - padding * 2)
+    );
+}
+
+
+function renderEquity(points) {
+    if (!points || points.length < 2) {
+        elements.equityStatus.textContent =
+            "Waiting for more trades";
+
+        elements.equityEmptyMessage.classList.remove(
+            "hidden"
+        );
+
+        elements.equityLine.setAttribute(
+            "points",
+            ""
+        );
+
+        if (points && points.length === 1) {
+            elements.equityBalance.textContent =
+                formatCurrency(points[0].balance);
+
+            elements.equityChange.textContent =
+                formatPercent(
+                    points[0].totalReturnPercent
+                );
+        }
+
+        return;
+    }
+
+    elements.equityEmptyMessage.classList.add(
+        "hidden"
+    );
+
+    const chartPoints =
+        calculateChartPoints(points);
+
+    const pointString = chartPoints
+        .map(
+            (point) =>
+                `${point.x.toFixed(2)},${point.y.toFixed(2)}`
+        )
+        .join(" ");
+
+    elements.equityLine.setAttribute(
+        "points",
+        pointString
+    );
+
+    const referenceY =
+        calculateReferenceLine(points);
+
+    elements.equityZeroLine.setAttribute(
+        "y1",
+        referenceY.toFixed(2)
+    );
+
+    elements.equityZeroLine.setAttribute(
+        "y2",
+        referenceY.toFixed(2)
+    );
+
+    const firstPoint = points[0];
+    const latestPoint = points[points.length - 1];
+
+    elements.equityBalance.textContent =
+        formatCurrency(latestPoint.balance);
+
+    elements.equityChange.textContent =
+        formatPercent(
+            latestPoint.totalReturnPercent
+        );
+
+    setValueClass(
+        elements.equityChange,
+        latestPoint.totalReturnPercent
+    );
+
+    elements.equityStatus.textContent =
+        `${points.length - 1} closed trades`;
+
+    elements.chartStartLabel.textContent =
+        formatDate(firstPoint.timestamp);
+
+    elements.chartEndLabel.textContent =
+        formatDate(latestPoint.timestamp);
+}
+
+async function loadEquityHistory() {
+    try {
+        const response = await fetch(
+            "/api/equity",
+            {
+                cache: "no-store",
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `Equity API returned ${response.status}`
+            );
+        }
+
+        const data = await response.json();
+
+        renderEquity(data.points);
+    } catch (error) {
+        console.error(error);
+
+        elements.equityStatus.textContent =
+            "Could not load equity";
+
+        elements.equityEmptyMessage.textContent =
+            "Could not load the equity curve.";
+
+        elements.equityEmptyMessage.classList.remove(
+            "hidden"
+        );
+    }
+}
+
 async function refreshPage() {
     await Promise.all([
         loadStatus(),
         loadTradeHistory(),
+        loadEquityHistory(),
     ]);
 }
 
