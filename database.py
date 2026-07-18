@@ -42,6 +42,7 @@ def create_tables() -> None:
     create_trade_table()
     migrate_trade_table()
     create_account_table()
+    create_equity_history_table()
 
 
 def save_candle(candle: dict[str, Any]) -> bool:
@@ -458,6 +459,10 @@ def close_trade(
             account["current_balance"]
         )
 
+        initial_balance = Decimal(
+            account["initial_balance"]
+        )
+
         if trade["position_size"] is None:
             position_size = calculate_position_size(
                 current_balance
@@ -512,6 +517,14 @@ def close_trade(
             WHERE id = 1
             """,
             (str(new_balance),),
+        )
+
+        save_equity_point(
+            connection=connection,
+            trade_id=trade_id,
+            timestamp=exit_time,
+            balance=new_balance,
+            initial_balance=initial_balance,
         )
 
         closed_trade = connection.execute(
@@ -713,3 +726,122 @@ def create_trade_table() -> None:
             )
             """
         )
+
+def create_equity_history_table() -> None:
+    """Opretter tabellen til kontoens historiske udvikling."""
+    with get_connection() as connection:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS equity_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                trade_id INTEGER,
+                timestamp TEXT NOT NULL,
+                balance TEXT NOT NULL,
+                total_profit TEXT NOT NULL,
+                total_return_percent REAL NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                FOREIGN KEY (trade_id) REFERENCES trades(id)
+            )
+            """
+        )
+
+        account = connection.execute(
+            """
+            SELECT initial_balance, current_balance
+            FROM account
+            WHERE id = 1
+            """
+        ).fetchone()
+
+        if account is None:
+            return
+
+        existing_points = connection.execute(
+            """
+            SELECT COUNT(*) AS point_count
+            FROM equity_history
+            """
+        ).fetchone()
+
+        if int(existing_points["point_count"]) == 0:
+            initial_balance = Decimal(
+                account["initial_balance"]
+            )
+
+            connection.execute(
+                """
+                INSERT INTO equity_history (
+                    trade_id,
+                    timestamp,
+                    balance,
+                    total_profit,
+                    total_return_percent
+                )
+                VALUES (
+                    NULL,
+                    CURRENT_TIMESTAMP,
+                    ?,
+                    ?,
+                    ?
+                )
+                """,
+                (
+                    str(initial_balance),
+                    str(Decimal("0.00")),
+                    0.0,
+                ),
+            )
+
+
+def save_equity_point(
+    connection: sqlite3.Connection,
+    trade_id: int,
+    timestamp: str,
+    balance: Decimal,
+    initial_balance: Decimal,
+) -> None:
+    """Gemmer et nyt punkt i kontoens historik."""
+    total_profit = (
+        balance - initial_balance
+    ).quantize(Decimal("0.01"))
+
+    if initial_balance == 0:
+        total_return_percent = Decimal("0")
+    else:
+        total_return_percent = (
+            total_profit / initial_balance
+        ) * Decimal("100")
+
+    connection.execute(
+        """
+        INSERT INTO equity_history (
+            trade_id,
+            timestamp,
+            balance,
+            total_profit,
+            total_return_percent
+        )
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            trade_id,
+            timestamp,
+            str(balance),
+            str(total_profit),
+            float(total_return_percent),
+        ),
+    )
+
+def get_equity_history() -> list[sqlite3.Row]:
+    """Henter hele kontoens udvikling i kronologisk rækkefølge."""
+    with get_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT *
+            FROM equity_history
+            ORDER BY id ASC
+            """
+        ).fetchall()
+
+    return list(rows)
