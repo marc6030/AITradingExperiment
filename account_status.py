@@ -29,7 +29,7 @@ def main() -> None:
     print("-------------")
     print(f"Startsaldo:     ${initial_balance:.2f}")
     print(f"Nuværende saldo:${current_balance:.2f}")
-    print(f"Samlet P/L:     ${total_profit:+.2f}")
+    print(f"Samlet P/L:     {total_profit:+.2f} USD")
     print(f"Samlet afkast:  {total_return:+.4f}%")
 
     trade = get_open_trade()
